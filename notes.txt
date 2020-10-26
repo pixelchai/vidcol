@@ -1,0 +1,32 @@
+Use json dict: key is hash of video file
+{
+    "hash_here" : {
+        "tags": [...],
+        "rating": 10,
+        playcount: 1,
+        skipcount: 0,
+        date: timestamp,
+        lastplayed: timestamp,
+        *
+    },
+    ...
+}
+
+*: potentially also
+list of counts, one count for each second of the video
+(so can plot histogram of sections viewed)
+
+https://stackoverflow.com/a/30460687/5013267
+also encrypt with zip command line
+play by rating
+
+to count as playcount: duration spent on video >= max(5, video_length)
+
+when importing: dialogue with list of videos imported
+buttons down the bottom like ImageTagger. Pressing any of the buttons will advance down the list
+also with preview video area (just like ImageTagger)
+
+playing:
+qtablewidget
+bar along bottom where you can add tags
+search bar to filter by tag
