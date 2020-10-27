@@ -1,12 +1,15 @@
 Use json dict: key is hash of video file
 {
     "hash_here" : {
+        filename: "whatever.webm",
         "tags": [...],
         "rating": 10,
         playcount: 1,
         skipcount: 0,
         date: timestamp,
+        duration: 100,  # seconds
         lastplayed: timestamp,
+        counts: [1, 1, 1, 0, 0, 0],
         *
     },
     ...
