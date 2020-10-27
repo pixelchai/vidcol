@@ -16,7 +16,8 @@ class CollectionTableWidget(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
-        self.table_headers = ["Filename", "Tags", "Rating"]
+        self.table_headers = ["Filename", "Tags", "Rating", "Playcount", "Skipcount", "Date", "Lastplayed", "Duration"]
+        self.results = []
 
         self.table = QtWidgets.QTableWidget(self)
         self.table.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)  # makes the text in the headers left-aligned
@@ -25,16 +26,20 @@ class CollectionTableWidget(QtWidgets.QWidget):
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)  # do not allow the cells' text to be edited
         self.table.horizontalHeader().setHighlightSections(False)  # the headers no longer become bold when cells are selected
         self.setContextMenuPolicy(Qt.CustomContextMenu)  # when right click is clicked (or any other equivalent action), fire the 'customContextMenuRequested' signal
+        self.table.setSortingEnabled(True)  # allow user to click on header to sort by it
         self.layout.addWidget(self.table)
 
-        # fake data:
-        self._clear_table()
-        self.table.setRowCount(1)
-        self.table.setItem(0, 0, QtWidgets.QTableWidgetItem("Bob.webm"))
-        self.table.setItem(0, 1, QtWidgets.QTableWidgetItem("fat cat sat mat"))
-        tmp_combo = QtWidgets.QComboBox()
-        tmp_combo.addItems(["0", "1", "2"])
-        self.table.setCellWidget(0, 2, tmp_combo)
+        # # fake data:
+        # self._clear_table()
+        # self.table.setRowCount(2)
+        # self.table.setItem(0, 0, QtWidgets.QTableWidgetItem("Bob.webm"))
+        # self.table.setItem(0, 1, QtWidgets.QTableWidgetItem("fat cat sat mat"))
+        # # tmp_combo = QtWidgets.QComboBox()
+        # # tmp_combo.addItems(["0", "1", "2"])
+        # self.table.setItem(0, 2, QtWidgets.QTableWidgetItem("6"))
+        # self.table.setItem(1, 0, QtWidgets.QTableWidgetItem("Sob.webm"))
+        # self.table.setItem(1, 1, QtWidgets.QTableWidgetItem("cat"))
+        # self.table.setItem(1, 2, QtWidgets.QTableWidgetItem("10"))
 
     def _set_table_headers(self):
         num_headers = len(self.table_headers)  # get the number of headers
@@ -52,6 +57,7 @@ class CollectionTableWidget(QtWidgets.QWidget):
         self.table.clear()  # completely clear the table.
         # Note: this also removes the header, columns, etc
         self._set_table_headers()  # table headers must always be set again after table is cleared
+        self.table.setRowCount(len(self.results))
 
 class SearchBarWidget(QtWidgets.QWidget):
     def __init__(self, parent):

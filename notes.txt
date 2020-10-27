@@ -33,3 +33,6 @@ playing:
 qtablewidget
 bar along bottom where you can add tags
 search bar to filter by tag
+
+Sorting: can just be done through QTableWidget header clicking thing (allows for both descending and ascending sort)
+but allow user to select which headers to display using Menu bar
