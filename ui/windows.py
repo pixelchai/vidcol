@@ -88,7 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for i, library_action in enumerate(self.library_actions):
             library_action.setChecked(self.library_manager.names[i] == name)
-        logger.debug("Library switched to : {}".format(name))
+        logger.debug("Library switched to: {}".format(name))
 
         # if library requires password, enter it
         # todo: implement
