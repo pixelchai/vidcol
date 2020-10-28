@@ -1,11 +1,12 @@
 import os
 import pyzipper
+from util import logger
 
 PATH_FILES = "files"
 
 class LibraryManager:
     def __init__(self):
-        self.libraries = set()  # set is like list but no duplicates
+        self.names = []
         self._cur_library = None
 
         # init files directory
@@ -13,29 +14,42 @@ class LibraryManager:
             os.makedirs(PATH_FILES)
 
             # if did not exist, make default library
-            with Library("Default") as default_library:
-                default_library.save()
+            self.new_library("Default")
         else:
             # files directory did exist, so read existing libraries from the folder
-            pass
+            for file in os.listdir(PATH_FILES):
+                name, ext = os.path.splitext(file)
+                if ext == ".zip":
+                    self.names.append(name)
+
+        logger.info("{} libraries detected".format(len(self.names)))
 
     def new_library(self, name) -> "Library":
-        with Library(name) as library:
-            library.save()
-            self.libraries.add(name)
-            return self.get_library(name)
+        if name in self.names:
+            raise KeyError
+        else:
+            with Library(name) as library:
+                library.save()
+                self.names.append(name)
+                return self.get_library(name)
 
     def get_library(self, name) -> "Library":
-        if name not in self.libraries:
+        if name not in self.names:
             raise KeyError
         else:
             if self._cur_library is not None:
                 self._cur_library.close()  # dispose of old library if any
-            self._cur_library = Library(name)
-            return self._cur_library
+
+            with Library(name) as library:
+                self._cur_library = library
+                return self._cur_library
+
+    def close(self):
+        if self._cur_library is not None:
+            self._cur_library.close()
 
     def __del__(self):
-        self._cur_library.close()
+        self.close()
 
 class Library:
     def __init__(self, name):
@@ -60,3 +74,8 @@ class Library:
 
     def close(self):
         self._fh.close()
+
+if __name__ == '__main__':
+    # for during dev only
+    manager = LibraryManager()
+    manager.new_library("Bruh")
