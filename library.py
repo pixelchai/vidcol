@@ -79,13 +79,16 @@ class Library:
         }
         self.meta = {}
 
-        self._fh = pyzipper.AESZipFile(self.path, "w", compression=pyzipper.ZIP_LZMA)  # file handle. NB: remember to dispose correctly
+        self._fh = pyzipper.AESZipFile(self.path, "a", compression=pyzipper.ZIP_DEFLATED)  # file handle. NB: remember to dispose correctly
         self._load()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __del__(self):
         self.close()
 
     def set_password(self, pwd):
