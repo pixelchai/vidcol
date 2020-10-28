@@ -3,6 +3,7 @@ import pyzipper
 from util import logger
 
 PATH_FILES = "files"
+PATH_LAST_FILE = os.path.join(PATH_FILES, "last.txt")
 
 class LibraryManager:
     def __init__(self):
@@ -42,7 +43,18 @@ class LibraryManager:
 
             with Library(name) as library:
                 self._cur_library = library
+
+                # write last library to filesystem
+                with open(PATH_LAST_FILE, "w") as f:
+                    f.write(name)
                 return self._cur_library
+
+    def get_last_library(self) -> "Library":
+        if os.path.isfile(PATH_LAST_FILE):
+            with open(PATH_LAST_FILE, "r") as f:
+                return self.get_library(f.read())
+        else:
+            return self.get_library("Default")  # in exceptional cases, error will be raised (such as when no libraries exist)
 
     def close(self):
         if self._cur_library is not None:

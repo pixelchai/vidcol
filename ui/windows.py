@@ -26,7 +26,8 @@ ITEM_UI_KEYS = [
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         self.library_manager = LibraryManager()
-        self.library = self.library_manager.get_library("Default")  # todo: last used library
+        self.library = self.library_manager.get_last_library()
+
 
         super().__init__(parent=None)
         self.setWindowTitle("VidCol")
