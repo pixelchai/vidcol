@@ -23,7 +23,7 @@ ITEM_UI_KEYS = [
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__(parent=None)
-        self.setWindowTitle("VidCol")
+        self.setWindowTitle("WebmCol")
 
         # contents
         self.main_widget = QtWidgets.QWidget(self)
@@ -52,6 +52,11 @@ class MainWindow(QtWidgets.QMainWindow):
             header_option_action.triggered.connect(partial(self._header_toggled, i))
             view_menu.addAction(header_option_action)
 
+        # library stuff
+        self.library_menu = self.menu_bar.addMenu("&Library")
+        new_library_action = QtWidgets.QAction("Add &New", self)
+        self.library_menu.addAction(new_library_action)
+
 
         # dragging and dropping files
         self.setAcceptDrops(True)
@@ -71,10 +76,3 @@ class MainWindow(QtWidgets.QMainWindow):
     def dropEvent(self, event: QtGui.QDropEvent):
         for url in event.mimeData().urls():
             print(url.toLocalFile())
-
-if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-
-    main_window = MainWindow()
-    main_window.show()
-    app.exec_()

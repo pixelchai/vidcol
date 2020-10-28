@@ -1,0 +1,5 @@
+pyzipper
+python-mpv
+PyQt5
+qtpy
+qtawesome
