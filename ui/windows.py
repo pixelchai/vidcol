@@ -52,11 +52,25 @@ class MainWindow(QtWidgets.QMainWindow):
             header_option_action.triggered.connect(partial(self._header_toggled, i))
             view_menu.addAction(header_option_action)
 
+
+        # dragging and dropping files
+        self.setAcceptDrops(True)
+
     def _header_toggled(self, n):
         self.header_options[n] = not self.header_options[n]  # toggle
         print("{}".format(n))
         print(self.header_options)
 
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        event.acceptProposedAction()
+
+    def dropEvent(self, event: QtGui.QDropEvent):
+        for url in event.mimeData().urls():
+            print(url.toLocalFile())
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])
