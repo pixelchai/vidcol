@@ -6,7 +6,7 @@ from datetime import datetime
 # set up logging
 
 PATH_LOGGING = "logs"
-logger = logging.getLogger("webmcol")
+logger = logging.getLogger("vidcol")
 
 if len(logger.handlers) <= 0:
     os.makedirs(PATH_LOGGING, exist_ok=True)

@@ -23,7 +23,7 @@ ITEM_UI_KEYS = [
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__(parent=None)
-        self.setWindowTitle("WebmCol")
+        self.setWindowTitle("VidCol")
 
         # contents
         self.main_widget = QtWidgets.QWidget(self)

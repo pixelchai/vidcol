@@ -38,3 +38,5 @@ Sorting: can just be done through QTableWidget header clicking thing (allows for
 but allow user to select which headers to display using Menu bar
 
 Todo: work on importing files + filesystem (w/ encryption/zipping)
+
+todo sometime: add way to remove libraries through GUI too
