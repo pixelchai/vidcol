@@ -71,7 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.library_actions.append(library_action)
 
         self.library_menu.addSeparator()
-        new_library_action = QtWidgets.QAction("Add &New", self)
+        new_library_action = QtWidgets.QAction("&Modify", self)
         self.library_menu.addAction(new_library_action)
 
 
@@ -107,3 +107,29 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         self.library.close()
         self.library_manager.close()
+
+
+class LibraryModificationWindow(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.main_widget = QtWidgets.QWidget(self)
+        self.main_layout = QtWidgets.QVBoxLayout(self.main_widget)
+        self.main_widget.setLayout(self.main_layout)
+
+        # list widget
+        self.list_widget = QtWidgets.QListWidget(self.main_widget)
+        self.main_layout.addWidget(self.list_widget)
+
+        # button bar
+        self.button_bar = widgets.ModificationButtonsBar(self.main_widget)
+        self.main_layout.addWidget(self.button_bar)
+
+        self.setCentralWidget(self.main_widget)
+
+if __name__ == '__main__':
+    # for debug only:
+    app = QtWidgets.QApplication([])
+    window = LibraryModificationWindow()
+
+    window.show()
+    app.exec_()

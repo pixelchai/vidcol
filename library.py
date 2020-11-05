@@ -116,5 +116,6 @@ class Library:
 
 if __name__ == '__main__':
     # for during dev only
-    manager = LibraryManager()
-    manager.new_library("Bruh")
+    # manager = LibraryManager()
+    # manager.new_library("Bruh")
+    pass
