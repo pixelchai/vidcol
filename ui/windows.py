@@ -104,7 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
             logger.debug("Library mod window closed")
             self._load_library_menu()  # refresh library menu
 
-        library_mod_window = LibraryModificationWindow(self)
+        library_mod_window = LibraryModificationWindow(self, self.library_manager)
         library_mod_window.close_signal.connect(on_window_closed)
         library_mod_window.show()
 
@@ -131,10 +131,10 @@ class CloseableWindow(QtWidgets.QMainWindow):
         self.close_signal.emit()
 
 class LibraryModificationWindow(CloseableWindow):
-    def __init__(self, parent=None):
+    def __init__(self, parent, library_manager: "LibraryManager"):
         super().__init__(parent)
-        if parent is not None:
-            self.setWindowTitle(parent.windowTitle() + " - Library Modification")
+        self.library_manager = library_manager
+        self.setWindowTitle(parent.windowTitle() + " - Library Modification")
 
         self.setFixedWidth(400)
         self.setFixedHeight(200)
@@ -145,20 +145,35 @@ class LibraryModificationWindow(CloseableWindow):
 
         # list widget
         self.list_widget = QtWidgets.QListWidget(self.main_widget)
+        self.list_widget.itemSelectionChanged.connect(self._list_selection_changed)
         self.main_layout.addWidget(self.list_widget)
-        self.list_widget.addItem("Default")
-        self.list_widget.addItem("Bruh")
+        self._load_list()
 
         # button bar
         self.button_bar = widgets.ModificationButtonsBar(self.main_widget)
+        self._update_buttons()
         self.main_layout.addWidget(self.button_bar)
 
         self.setCentralWidget(self.main_widget)
 
-if __name__ == '__main__':
-    # for debug only:
-    app = QtWidgets.QApplication([])
-    window = LibraryModificationWindow()
+    def _load_list(self):
+        self.list_widget.clear()
+        for library_name in self.library_manager.names:
+            self.list_widget.addItem(library_name)
 
-    window.show()
-    app.exec_()
+    def _update_buttons(self):
+        enabled = len(self.list_widget.selectedItems()) > 0
+        self.button_bar.btn_minus.setEnabled(enabled)
+        self.button_bar.btn_edit.setEnabled(enabled)
+
+    def _list_selection_changed(self):
+        self._update_buttons()
+
+if __name__ == '__main__':
+    # # for debug only:
+    # app = QtWidgets.QApplication([])
+    # window = LibraryModificationWindow()
+    #
+    # window.show()
+    # app.exec_()
+    pass
