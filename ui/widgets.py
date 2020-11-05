@@ -96,6 +96,7 @@ class ModificationButtonsBar(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
 
         # plus button
         self.btn_plus = QtWidgets.QPushButton(self)

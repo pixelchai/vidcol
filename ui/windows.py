@@ -62,6 +62,17 @@ class MainWindow(QtWidgets.QMainWindow):
         # library stuff
         self.library_menu = self.menu_bar.addMenu("&Library")
         self.library_actions = []
+
+        self.modify_library_action = QtWidgets.QAction("&Modify", self)
+        self.modify_library_action.triggered.connect(self._modify_library)
+        self._load_library_menu()
+
+        # dragging and dropping files
+        self.setAcceptDrops(True)
+
+    def _load_library_menu(self):
+        self.library_menu.clear()
+
         for library_name in self.library_manager.names:
             library_action = QtWidgets.QAction("&" + str(library_name), self)
             library_action.setCheckable(True)
@@ -71,12 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.library_actions.append(library_action)
 
         self.library_menu.addSeparator()
-        new_library_action = QtWidgets.QAction("&Modify", self)
-        self.library_menu.addAction(new_library_action)
-
-
-        # dragging and dropping files
-        self.setAcceptDrops(True)
+        self.library_menu.addAction(self.modify_library_action)
 
     def _toggle_header(self, i):
         self.header_options[i] = not self.header_options[i]  # toggle
@@ -93,6 +99,15 @@ class MainWindow(QtWidgets.QMainWindow):
         # if library requires password, enter it
         # todo: implement
 
+    def _modify_library(self):
+        def on_window_closed():
+            logger.debug("Library mod window closed")
+            self._load_library_menu()  # refresh library menu
+
+        library_mod_window = LibraryModificationWindow(self)
+        library_mod_window.close_signal.connect(on_window_closed)
+        library_mod_window.show()
+
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
@@ -106,12 +121,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         self.library.close()
+        self.windowTitle()
         self.library_manager.close()
 
+class CloseableWindow(QtWidgets.QMainWindow):
+    close_signal = QtCore.Signal()  # https://stackoverflow.com/a/37640029/5013267
 
-class LibraryModificationWindow(QtWidgets.QMainWindow):
+    def closeEvent(self, event):
+        self.close_signal.emit()
+
+class LibraryModificationWindow(CloseableWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
+        if parent is not None:
+            self.setWindowTitle(parent.windowTitle() + " - Library Modification")
+
+        self.setFixedWidth(400)
+        self.setFixedHeight(200)
+
         self.main_widget = QtWidgets.QWidget(self)
         self.main_layout = QtWidgets.QVBoxLayout(self.main_widget)
         self.main_widget.setLayout(self.main_layout)
@@ -119,6 +146,8 @@ class LibraryModificationWindow(QtWidgets.QMainWindow):
         # list widget
         self.list_widget = QtWidgets.QListWidget(self.main_widget)
         self.main_layout.addWidget(self.list_widget)
+        self.list_widget.addItem("Default")
+        self.list_widget.addItem("Bruh")
 
         # button bar
         self.button_bar = widgets.ModificationButtonsBar(self.main_widget)
