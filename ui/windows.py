@@ -153,6 +153,7 @@ class LibraryModificationWindow(CloseableWindow):
         # button bar
         self.button_bar = widgets.ModificationButtonsBar(self.main_widget)
         self.button_bar.btn_plus.clicked.connect(self._btn_plus_clicked)
+        self.button_bar.btn_edit.clicked.connect(self._btn_edit_clicked)
         self._update_buttons()
         self.main_layout.addWidget(self.button_bar)
 
@@ -175,14 +176,21 @@ class LibraryModificationWindow(CloseableWindow):
         library_details_window = LibraryDetailWindow(self)
         library_details_window.show()
 
+    def _btn_edit_clicked(self):
+        for selected_item in self.list_widget.selectedItems():
+            library_details_window = LibraryDetailWindow(self, selected_item.text(), True)
+            library_details_window.show()
+
 class LibraryDetailWindow(CloseableWindow):
-    def __init__(self, parent):
+    def __init__(self, parent, library_name=None, current_pass_field=False):
         super().__init__(parent)
         self.setWindowTitle("Library Details")
         self.main_widget = QtWidgets.QWidget(parent)
         self.main_layout = QtWidgets.QVBoxLayout(self.main_widget)
 
         self.edit_name = QtWidgets.QLineEdit(self.main_widget)
+        if library_name is not None:
+            self.edit_name.setText(library_name)
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(QtWidgets.QLabel("Name: "))
         hbox.addWidget(self.edit_name)
@@ -194,10 +202,19 @@ class LibraryDetailWindow(CloseableWindow):
         line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.main_layout.addWidget(line)
 
+        if current_pass_field:
+            self.current_pass = QtWidgets.QLineEdit(self.main_widget)
+            self.current_pass.setEchoMode(QtWidgets.QLineEdit.Password)
+            hbox = QtWidgets.QHBoxLayout()
+            hbox.addWidget(QtWidgets.QLabel("Current Password: "))
+            hbox.addItem(QtWidgets.QSpacerItem(0, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+            hbox.addWidget(self.current_pass)
+            self.main_layout.addLayout(hbox)
+
         self.edit_pass = QtWidgets.QLineEdit(self.main_widget)
         self.edit_pass.setEchoMode(QtWidgets.QLineEdit.Password)
         hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(QtWidgets.QLabel("Password (Optional): "))
+        hbox.addWidget(QtWidgets.QLabel("New Password (Optional): "))
         hbox.addItem(QtWidgets.QSpacerItem(0, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         hbox.addWidget(self.edit_pass)
         self.main_layout.addLayout(hbox)
@@ -205,25 +222,23 @@ class LibraryDetailWindow(CloseableWindow):
         self.edit_pass_confirm = QtWidgets.QLineEdit(self.main_widget)
         self.edit_pass_confirm.setEchoMode(QtWidgets.QLineEdit.Password)
         hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(QtWidgets.QLabel("Password Confirm: "))
+        hbox.addWidget(QtWidgets.QLabel("New Password Confirm: "))
         hbox.addItem(QtWidgets.QSpacerItem(0, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
         hbox.addWidget(self.edit_pass_confirm)
         self.main_layout.addLayout(hbox)
 
         hbox = QtWidgets.QHBoxLayout()
         self.btn_ok = QtWidgets.QPushButton("Ok")
+        self.btn_ok.clicked.connect(self.close)
         hbox.addWidget(self.btn_ok)
 
         self.btn_cancel = QtWidgets.QPushButton("Cancel")
-        self.btn_cancel.clicked.connect(self._btn_clicked)
+        self.btn_cancel.clicked.connect(self.close)
         hbox.addWidget(self.btn_cancel)
         self.main_layout.addLayout(hbox)
 
         self.main_widget.setLayout(self.main_layout)
         self.setCentralWidget(self.main_widget)
-
-    def _btn_clicked(self):
-        self.close()
 
 if __name__ == '__main__':
     # # for debug only:
