@@ -71,6 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
 
     def _load_library_menu(self):
+        self.library_actions.clear()
         self.library_menu.clear()
 
         for library_name in self.library_manager.names:
@@ -209,20 +210,20 @@ class LibraryDetailWindow(CloseableWindow):
         hbox.addWidget(self.edit_pass_confirm)
         self.main_layout.addLayout(hbox)
 
-        # # vertical spacer
-        # self.main_layout.addItem(QtWidgets.QSpacerItem(20, 40,
-        #                                                QtWidgets.QSizePolicy.Minimum,
-        #                                                QtWidgets.QSizePolicy.Expanding))
-
         hbox = QtWidgets.QHBoxLayout()
         self.btn_ok = QtWidgets.QPushButton("Ok")
         hbox.addWidget(self.btn_ok)
+
         self.btn_cancel = QtWidgets.QPushButton("Cancel")
+        self.btn_cancel.clicked.connect(self._btn_clicked)
         hbox.addWidget(self.btn_cancel)
         self.main_layout.addLayout(hbox)
 
         self.main_widget.setLayout(self.main_layout)
         self.setCentralWidget(self.main_widget)
+
+    def _btn_clicked(self):
+        self.close()
 
 if __name__ == '__main__':
     # # for debug only:
