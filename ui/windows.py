@@ -151,6 +151,7 @@ class LibraryModificationWindow(CloseableWindow):
 
         # button bar
         self.button_bar = widgets.ModificationButtonsBar(self.main_widget)
+        self.button_bar.btn_plus.clicked.connect(self._btn_plus_clicked)
         self._update_buttons()
         self.main_layout.addWidget(self.button_bar)
 
@@ -168,6 +169,60 @@ class LibraryModificationWindow(CloseableWindow):
 
     def _list_selection_changed(self):
         self._update_buttons()
+
+    def _btn_plus_clicked(self):
+        library_details_window = LibraryDetailWindow(self)
+        library_details_window.show()
+
+class LibraryDetailWindow(CloseableWindow):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle("Library Details")
+        self.main_widget = QtWidgets.QWidget(parent)
+        self.main_layout = QtWidgets.QVBoxLayout(self.main_widget)
+
+        self.edit_name = QtWidgets.QLineEdit(self.main_widget)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("Name: "))
+        hbox.addWidget(self.edit_name)
+        self.main_layout.addLayout(hbox)
+
+        # horizontal line
+        line = QtWidgets.QFrame(self)
+        line.setFrameShape(QtWidgets.QFrame.HLine)
+        line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.main_layout.addWidget(line)
+
+        self.edit_pass = QtWidgets.QLineEdit(self.main_widget)
+        self.edit_pass.setEchoMode(QtWidgets.QLineEdit.Password)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("Password (Optional): "))
+        hbox.addItem(QtWidgets.QSpacerItem(0, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        hbox.addWidget(self.edit_pass)
+        self.main_layout.addLayout(hbox)
+
+        self.edit_pass_confirm = QtWidgets.QLineEdit(self.main_widget)
+        self.edit_pass_confirm.setEchoMode(QtWidgets.QLineEdit.Password)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("Password Confirm: "))
+        hbox.addItem(QtWidgets.QSpacerItem(0, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        hbox.addWidget(self.edit_pass_confirm)
+        self.main_layout.addLayout(hbox)
+
+        # # vertical spacer
+        # self.main_layout.addItem(QtWidgets.QSpacerItem(20, 40,
+        #                                                QtWidgets.QSizePolicy.Minimum,
+        #                                                QtWidgets.QSizePolicy.Expanding))
+
+        hbox = QtWidgets.QHBoxLayout()
+        self.btn_ok = QtWidgets.QPushButton("Ok")
+        hbox.addWidget(self.btn_ok)
+        self.btn_cancel = QtWidgets.QPushButton("Cancel")
+        hbox.addWidget(self.btn_cancel)
+        self.main_layout.addLayout(hbox)
+
+        self.main_widget.setLayout(self.main_layout)
+        self.setCentralWidget(self.main_widget)
 
 if __name__ == '__main__':
     # # for debug only:
