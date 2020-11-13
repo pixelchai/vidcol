@@ -1,4 +1,6 @@
 import os
+import shutil
+
 import pyzipper
 import json
 from util import logger
@@ -68,9 +70,12 @@ class LibraryManager:
         self.close()
 
 class Library:
-    def __init__(self, name):
+    def __init__(self, name, pwd=None):
         self.name = name
+        self.pwd = pwd
+
         self.path = os.path.join(PATH_FILES, self.name + ".zip")
+        self.path_tmp = os.path.join(PATH_FILES, self.name + ".tmp.zip")
         self._closed = False
 
         # default config
@@ -79,8 +84,11 @@ class Library:
         }
         self.meta = {}
 
-        self._fh = pyzipper.AESZipFile(self.path, "a", compression=pyzipper.ZIP_DEFLATED)  # file handle. NB: remember to dispose correctly
+        self._fh = self.__open_fh()  # file handle. NB: remember to dispose correctly
         self._load()
+
+    def __open_fh(self):
+        return pyzipper.AESZipFile(self.path, "a", compression=pyzipper.ZIP_DEFLATED)
 
     def __enter__(self):
         return self
@@ -91,13 +99,31 @@ class Library:
     def __del__(self):
         self.close()
 
-    def set_password(self, pwd):
-        self._fh.setencryption(pyzipper.WZ_AES)
-        self._fh.setpassword(pwd)
+    # def set_password(self, pwd):
+    #     self._fh.setencryption(pyzipper.WZ_AES)
+    #     self._fh.setpassword(pwd)
 
-    def save(self):
-        self._fh.writestr("config.json", json.dumps(self.config))
-        self._fh.writestr("meta.json", json.dumps(self.meta))
+    def save(self, recreate_fh=True):
+        """
+        :param recreate_fh: Zipfiles must be closed during the saving process. Set to True to recreate (reopen) the file handle after saving
+        """
+        # todo: encryption
+        if self._fh is not None:
+            self._fh.close()
+
+        # create new tmp archive
+        with pyzipper.AESZipFile(self.path_tmp, "a", compression=pyzipper.ZIP_DEFLATED) as fh_tmp:
+            fh_tmp.writestr("config.json", json.dumps(self.config))
+            fh_tmp.writestr("meta.json", json.dumps(self.meta))
+
+        # replace old archive with new tmp archive
+        shutil.move(self.path_tmp, self.path)
+
+        # recreate fh
+        if recreate_fh:
+            self._fh = self.__open_fh()
+
+        logger.debug("Library \"{}\" saved".format(self.name))
 
     def _load(self):
         if "config.json" in self._fh.namelist():
@@ -110,7 +136,7 @@ class Library:
 
     def close(self):
         if not self._closed:
-            self._fh.close()
+            self.save(False)  # recreate_fh=False => zipfile will be closed
             logger.debug("Library \"{}\" closed".format(self.name))
             self._closed = True
 
