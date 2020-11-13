@@ -44,3 +44,9 @@ todo sometime: add way to remove libraries through GUI too
 next time: maybe overthrow the whole _cur_library thing in LibraryManager in favour of just disposing old library yourself in windows.py
 -> reduce complexity
 impl: creating new libraries from GUI
+
+
+Bug: currently, saving the zipfile will actually store a duplicate of the files written to it using zipfile.writestr
+due to a limitation with zipfile itself (bruh) https://bugs.python.org/issue2824
+so every time the zipfile was saved, its file would only grow. Bad.
+Need to rebuild zip file each time -- alter library.save()

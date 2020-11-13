@@ -90,3 +90,30 @@ class SearchBarWidget(QtWidgets.QWidget):
         # clear search box's text and trigger search button
         self.search_box.clear()
         self.btn_search.click()
+
+class ModificationButtonsBar(QtWidgets.QWidget):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        # plus button
+        self.btn_plus = QtWidgets.QPushButton(self)
+        self.btn_plus.setContentsMargins(0, 0, 0, 0)
+        self.btn_plus.setIcon(qta.icon('fa.plus'))
+        self.layout.addWidget(self.btn_plus)
+
+        # minus button
+        self.btn_minus = QtWidgets.QPushButton(self)
+        self.btn_minus.setContentsMargins(0, 0, 0, 0)
+        self.btn_minus.setIcon(qta.icon('fa.minus'))
+        self.layout.addWidget(self.btn_minus)
+
+        # edit button
+        self.btn_edit = QtWidgets.QPushButton(self)
+        self.btn_edit.setContentsMargins(0, 0, 0, 0)
+        self.btn_edit.setIcon(qta.icon('fa.edit'))
+        self.layout.addWidget(self.btn_edit)
+
+        self.setLayout(self.layout)
