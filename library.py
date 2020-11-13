@@ -87,8 +87,16 @@ class Library:
         self._fh = self.__open_fh()  # file handle. NB: remember to dispose correctly
         self._load()
 
-    def __open_fh(self):
-        return pyzipper.AESZipFile(self.path, "a", compression=pyzipper.ZIP_DEFLATED)
+    def __open_fh(self, path=None):
+        if path is None:
+            path = self.path
+
+        fh = pyzipper.AESZipFile(path, "a", compression=pyzipper.ZIP_DEFLATED)
+        if self.pwd is not None:
+            fh.setencryption(pyzipper.WZ_AES)
+            fh.setpassword(self.pwd)
+
+        return fh
 
     def __enter__(self):
         return self
@@ -107,12 +115,11 @@ class Library:
         """
         :param recreate_fh: Zipfiles must be closed during the saving process. Set to True to recreate (reopen) the file handle after saving
         """
-        # todo: encryption
         if self._fh is not None:
             self._fh.close()
 
         # create new tmp archive
-        with pyzipper.AESZipFile(self.path_tmp, "a", compression=pyzipper.ZIP_DEFLATED) as fh_tmp:
+        with self.__open_fh(self.path_tmp) as fh_tmp:
             fh_tmp.writestr("config.json", json.dumps(self.config))
             fh_tmp.writestr("meta.json", json.dumps(self.meta))
 

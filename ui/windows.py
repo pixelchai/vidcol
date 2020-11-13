@@ -196,6 +196,7 @@ class LibraryDetailWindow(CloseableWindow):
     def __init__(self, parent, library_name=None, current_pass_field=False):
         super().__init__(parent)
         self.setWindowTitle("Library Details")
+
         self.main_widget = QtWidgets.QWidget(parent)
         self.main_layout = QtWidgets.QVBoxLayout(self.main_widget)
 
@@ -250,6 +251,9 @@ class LibraryDetailWindow(CloseableWindow):
 
         self.main_widget.setLayout(self.main_layout)
         self.setCentralWidget(self.main_widget)
+
+        # for tiling window managers, this ensures shown as modal (floating) window
+        self.setFixedSize(self.sizeHint())
 
 if __name__ == '__main__':
     # # for debug only:
