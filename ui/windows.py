@@ -49,7 +49,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # menu bar
         self.menu_bar = self.menuBar()
         view_menu = self.menu_bar.addMenu("&View")
-        self.header_options = [True for _ in range(len(ITEM_UI_KEYS))]  # TODO: or load from saved config
+        self.header_options = self.library.config.get("headers", [True for _ in range(len(ITEM_UI_KEYS))])
 
         # header options
         for i, item_key in enumerate(ITEM_UI_KEYS):
@@ -121,6 +121,7 @@ class MainWindow(QtWidgets.QMainWindow):
             print(url.toLocalFile())
 
     def closeEvent(self, event):
+        self.library.save()
         self.library.close()
         self.windowTitle()
         self.library_manager.close()
