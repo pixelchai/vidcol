@@ -49,15 +49,19 @@ class MainWindow(QtWidgets.QMainWindow):
         # menu bar
         self.menu_bar = self.menuBar()
         view_menu = self.menu_bar.addMenu("&View")
-        self.header_options = self.library.config.get("headers", [True for _ in range(len(ITEM_UI_KEYS))])
+        self.header_options = None
 
-        # header options
+        # header options ui
+        self.__header_option_actions = []
         for i, item_key in enumerate(ITEM_UI_KEYS):
             header_option_action = QtWidgets.QAction("&" + str(item_key).title(), self)
             header_option_action.setCheckable(True)
-            header_option_action.setChecked(self.header_options[i])
             header_option_action.triggered.connect(partial(self._toggle_header, i))
+
+            self.__header_option_actions.append(header_option_action)
             view_menu.addAction(header_option_action)
+
+        self._load_header_options()
 
         # library stuff
         self.library_menu = self.menu_bar.addMenu("&Library")
@@ -85,6 +89,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.library_menu.addSeparator()
         self.library_menu.addAction(self.modify_library_action)
 
+    def _load_header_options(self):
+        self.header_options = self.library.config.get("headers", [True for _ in range(len(ITEM_UI_KEYS))])
+        for i, opt in enumerate(self.header_options):
+            self.__header_option_actions[i].setChecked(opt)
+
     def _toggle_header(self, i):
         self.header_options[i] = not self.header_options[i]  # toggle
         logger.debug("Toggled header: {}".format(ITEM_UI_KEYS[i]))
@@ -95,6 +104,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for i, library_action in enumerate(self.library_actions):
             library_action.setChecked(self.library_manager.names[i] == name)
+
+        self._load_header_options()
         logger.debug("Library switched to: {}".format(name))
 
         # if library requires password, enter it
@@ -121,7 +132,6 @@ class MainWindow(QtWidgets.QMainWindow):
             print(url.toLocalFile())
 
     def closeEvent(self, event):
-        self.library.save()
         self.library.close()
         self.windowTitle()
         self.library_manager.close()

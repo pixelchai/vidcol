@@ -135,6 +135,9 @@ class Library:
                 self.meta = json.load(f)
 
     def close(self):
+        """
+        NB: saves as well automatically
+        """
         if not self._closed:
             self.save(False)  # recreate_fh=False => zipfile will be closed
             logger.debug("Library \"{}\" closed".format(self.name))
