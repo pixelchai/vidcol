@@ -72,7 +72,7 @@ class LibraryManager:
 class Library:
     def __init__(self, name, pwd=None):
         self.name = name
-        self.pwd = pwd
+        self._pwd = pwd
 
         self.path = os.path.join(PATH_FILES, self.name + ".zip")
         self.path_tmp = os.path.join(PATH_FILES, self.name + ".tmp.zip")
@@ -92,9 +92,7 @@ class Library:
             path = self.path
 
         fh = pyzipper.AESZipFile(path, "a", compression=pyzipper.ZIP_DEFLATED)
-        if self.pwd is not None:
-            fh.setencryption(pyzipper.WZ_AES)
-            fh.setpassword(str(self.pwd).encode("utf8"))
+        self._apply_password(fh)
 
         return fh
 
@@ -107,9 +105,10 @@ class Library:
     def __del__(self):
         self.close()
 
-    # def set_password(self, pwd):
-    #     self._fh.setencryption(pyzipper.WZ_AES)
-    #     self._fh.setpassword(pwd)
+    def _apply_password(self, fh):
+        if self._pwd is not None:
+            fh.setencryption(pyzipper.WZ_AES)
+            fh.setpassword(str(self._pwd).encode("utf8"))
 
     def save(self, recreate_fh=True):
         """
@@ -133,13 +132,17 @@ class Library:
         logger.debug("Library \"{}\" saved".format(self.name))
 
     def _load(self):
-        if "config.json" in self._fh.namelist():
-            with self._fh.open("config.json", "r") as f:
-                self.config = json.load(f)
+        try:
+            if "config.json" in self._fh.namelist():
+                with self._fh.open("config.json", "r") as f:
+                    self.config = json.load(f)
 
-        if "meta.json" in self._fh.namelist():
-            with self._fh.open("meta.json", "r") as f:
-                self.meta = json.load(f)
+            if "meta.json" in self._fh.namelist():
+                with self._fh.open("meta.json", "r") as f:
+                    self.meta = json.load(f)
+        except RuntimeError as e:
+            if "requires a password" in str(e):
+                pass  # todo: show dialog asking user for password, set password, apply password, reload
 
     def close(self):
         """
