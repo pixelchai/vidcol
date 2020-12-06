@@ -68,3 +68,7 @@ KeyError: 'Cryptodome.Cipher.AES'
 Although I checked (printing to console) and Cryptodome.Cipher.AES definitely is in that dictionary right before there.
 This works in debug mode without the explicit del too.
 My only guess is that maybe non-debug Python optimises incorrectly(?) and deletes that module earlier than it should
+
+NOTE:
+filenames are visible in archive -- might want to either not keep original filenames (use hash or something)
+or encrypt filenames before writing

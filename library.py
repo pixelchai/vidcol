@@ -84,6 +84,9 @@ class Library:
         }
         self.meta = {}
 
+        if os.path.isfile(self.path):
+            self.prompt_password()
+
         self._fh = self.__open_fh()  # file handle. NB: remember to dispose correctly
         self._load()
 
@@ -92,7 +95,7 @@ class Library:
             path = self.path
 
         fh = pyzipper.AESZipFile(path, "a", compression=pyzipper.ZIP_DEFLATED)
-        self._apply_password(fh)
+        self._apply_password(fh, self._pwd)
 
         return fh
 
@@ -105,10 +108,10 @@ class Library:
     def __del__(self):
         self.close()
 
-    def _apply_password(self, fh):
-        if self._pwd is not None:
+    def _apply_password(self, fh, pwd):
+        if pwd is not None:
             fh.setencryption(pyzipper.WZ_AES)
-            fh.setpassword(str(self._pwd).encode("utf8"))
+            fh.setpassword(str(pwd).encode("utf8"))
 
     def save(self, recreate_fh=True):
         """
@@ -131,18 +134,49 @@ class Library:
 
         logger.debug("Library \"{}\" saved".format(self.name))
 
-    def _load(self):
+    def test_password(self, pwd):
+        fh = self.__open_fh(self.path)
         try:
-            if "config.json" in self._fh.namelist():
-                with self._fh.open("config.json", "r") as f:
-                    self.config = json.load(f)
+            self._apply_password(fh, pwd)
 
-            if "meta.json" in self._fh.namelist():
-                with self._fh.open("meta.json", "r") as f:
-                    self.meta = json.load(f)
+            with fh.open("config.json", "r") as f:
+                return True
         except RuntimeError as e:
-            if "requires a password" in str(e):
-                pass  # todo: show dialog asking user for password, set password, apply password, reload
+            if any([x in str(e) for x in ("requires a password", "Bad password")]):
+                return False
+            else:
+                # other kind of error so re-raise
+                raise
+        finally:
+            fh.close()
+
+    def prompt_password(self):
+        attempt_no = 0
+        while True:
+            if self.test_password(self._pwd):
+                logger.debug("Password test for library \"{}\" succeeded".format(self.name))
+                return
+            else:
+                msg = "The provided password was incorrect. Please try again: "
+                if attempt_no <= 0:
+                    logger.debug("Password required for library \"{}\". Prompting user.".format(self.name))
+                    msg = "Please input password: "
+                self._pwd = input(msg)  # todo: replace with ui
+            attempt_no += 1
+
+    def _load(self):
+        # try:
+        if "config.json" in self._fh.namelist():
+            with self._fh.open("config.json", "r") as f:
+                self.config = json.load(f)
+
+        if "meta.json" in self._fh.namelist():
+            with self._fh.open("meta.json", "r") as f:
+                self.meta = json.load(f)
+        # except RuntimeError as e:
+        #     if "requires a password" in str(e):
+        #         pass  # todo: show dialog asking user for password, set password, apply password, reload
+        #         # maybe todo: implement this in defensive programming style instead -- test password method
 
     def close(self):
         """
