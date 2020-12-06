@@ -29,16 +29,16 @@ class LibraryManager:
 
         logger.info("{} libraries detected".format(len(self.names)))
 
-    def new_library(self, name) -> "Library":
+    def new_library(self, name, pwd=None) -> "Library":
         if name in self.names:
             raise KeyError
         else:
-            with Library(name) as library:
+            with Library(name, pwd) as library:
                 library.save()
             self.names.append(name)
-            return self.get_library(name)
+            return self.get_library(name, pwd)
 
-    def get_library(self, name) -> "Library":
+    def get_library(self, name, pwd=None) -> "Library":
         if name not in self.names:
             raise KeyError
         else:
@@ -48,7 +48,7 @@ class LibraryManager:
                 else:
                     self._cur_library.close()  # dispose of old library if any
 
-            self._cur_library = Library(name)
+            self._cur_library = Library(name, pwd)
 
             # write last library to filesystem
             with open(PATH_LAST_FILE, "w") as f:
@@ -94,7 +94,7 @@ class Library:
         fh = pyzipper.AESZipFile(path, "a", compression=pyzipper.ZIP_DEFLATED)
         if self.pwd is not None:
             fh.setencryption(pyzipper.WZ_AES)
-            fh.setpassword(self.pwd)
+            fh.setpassword(str(self.pwd).encode("utf8"))
 
         return fh
 
@@ -152,6 +152,7 @@ class Library:
 
 if __name__ == '__main__':
     # for during dev only
-    # manager = LibraryManager()
-    # manager.new_library("Bruh")
+    manager = LibraryManager()
+    manager.new_library("test", "test")
+    del manager  # see notes issue #2
     pass

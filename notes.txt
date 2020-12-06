@@ -50,3 +50,21 @@ Bug: currently, saving the zipfile will actually store a duplicate of the files 
 due to a limitation with zipfile itself (bruh) https://bugs.python.org/issue2824
 so every time the zipfile was saved, its file would only grow. Bad.
 Need to rebuild zip file each time -- alter library.save()
+
+issue #2:
+For some reason not explicitly deleting library here results in:
+Traceback (most recent call last):
+  File "/media/Coding/py/vidcol/library.py", line 108, in __del__
+  File "/media/Coding/py/vidcol/library.py", line 149, in close
+  File "/media/Coding/py/vidcol/library.py", line 123, in save
+  File "/home/ab/.local/lib/python3.8/site-packages/pyzipper/zipfile.py", line 2276, in writestr
+  File "/home/ab/.local/lib/python3.8/site-packages/pyzipper/zipfile.py", line 2006, in open
+  File "/home/ab/.local/lib/python3.8/site-packages/pyzipper/zipfile.py", line 2048, in _open_to_write
+  File "/home/ab/.local/lib/python3.8/site-packages/pyzipper/zipfile_aes.py", line 330, in get_encrypter
+  File "/home/ab/.local/lib/python3.8/site-packages/pyzipper/zipfile_aes.py", line 146, in __init__
+  File "/home/ab/.local/lib/python3.8/site-packages/Cryptodome/Cipher/AES.py", line 235, in new
+KeyError: 'Cryptodome.Cipher.AES'
+
+Although I checked (printing to console) and Cryptodome.Cipher.AES definitely is in that dictionary right before there.
+This works in debug mode without the explicit del too.
+My only guess is that maybe non-debug Python optimises incorrectly(?) and deletes that module earlier than it should
