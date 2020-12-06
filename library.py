@@ -3,10 +3,15 @@ import shutil
 
 import pyzipper
 import json
+import util
 from util import logger
+from qtpy import QtWidgets, QtGui, QtCore
 
 PATH_FILES = "files"
 PATH_LAST_FILE = os.path.join(PATH_FILES, "last.txt")
+
+class PasswordRefusedException(RuntimeError):
+    pass
 
 class LibraryManager:
     def __init__(self):
@@ -39,28 +44,36 @@ class LibraryManager:
             return self.get_library(name, pwd)
 
     def get_library(self, name, pwd=None) -> "Library":
-        if name not in self.names:
-            raise KeyError
-        else:
-            if self._cur_library is not None:
-                if self._cur_library.name == name:
-                    return self._cur_library
-                else:
-                    self._cur_library.close()  # dispose of old library if any
+        try:
+            if name not in self.names:
+                raise KeyError
+            else:
+                if self._cur_library is not None:
+                    if self._cur_library.name == name:
+                        return self._cur_library
+                    else:
+                        self._cur_library.close()  # dispose of old library if any
 
-            self._cur_library = Library(name, pwd)
+                self._cur_library = Library(name, pwd)
 
-            # write last library to filesystem
-            with open(PATH_LAST_FILE, "w") as f:
-                f.write(name)
-            return self._cur_library
+                # write last library to filesystem
+                with open(PATH_LAST_FILE, "w") as f:
+                    f.write(name)
+                return self._cur_library
+        except PasswordRefusedException:
+            util.warn("Password refused while trying to get library \"{}\" so "
+                      "switching to default library instead".format(name))
+            return self.get_default_library()
 
     def get_last_library(self) -> "Library":
         if os.path.isfile(PATH_LAST_FILE):
             with open(PATH_LAST_FILE, "r") as f:
                 return self.get_library(f.read())
         else:
-            return self.get_library("Default")  # in exceptional cases, error will be raised (such as when no libraries exist)
+            return self.get_default_library()
+
+    def get_default_library(self) -> "Library":
+        return self.get_library("Default")  # in exceptional cases, error will be raised (such as when no libraries exist)
 
     def close(self):
         if self._cur_library is not None:
@@ -117,8 +130,12 @@ class Library:
         """
         :param recreate_fh: Zipfiles must be closed during the saving process. Set to True to recreate (reopen) the file handle after saving
         """
-        if self._fh is not None:
-            self._fh.close()
+        try:
+            if self._fh is not None:
+                self._fh.close()
+        except AttributeError:
+            # happens when password refused and disposing Library object
+            return
 
         # create new tmp archive
         with self.__open_fh(self.path_tmp) as fh_tmp:
@@ -160,12 +177,17 @@ class Library:
                 msg = "The provided password was incorrect. Please try again: "
                 if attempt_no <= 0:
                     logger.debug("Password required for library \"{}\". Prompting user.".format(self.name))
-                    msg = "Please input password: "
-                self._pwd = input(msg)  # todo: replace with ui
+                    msg = "Library \"{}\" is encrypted. Please input password: ".format(self.name)
+
+                # noinspection PyArgumentList
+                text, ok = QtWidgets.QInputDialog.getText(None, "Password", msg, QtWidgets.QLineEdit.Password)
+                if ok:
+                    self._pwd = text
+                else:
+                    raise PasswordRefusedException("Password input: not ok")
             attempt_no += 1
 
     def _load(self):
-        # try:
         if "config.json" in self._fh.namelist():
             with self._fh.open("config.json", "r") as f:
                 self.config = json.load(f)
@@ -173,10 +195,6 @@ class Library:
         if "meta.json" in self._fh.namelist():
             with self._fh.open("meta.json", "r") as f:
                 self.meta = json.load(f)
-        # except RuntimeError as e:
-        #     if "requires a password" in str(e):
-        #         pass  # todo: show dialog asking user for password, set password, apply password, reload
-        #         # maybe todo: implement this in defensive programming style instead -- test password method
 
     def close(self):
         """
@@ -188,8 +206,8 @@ class Library:
             self._closed = True
 
 if __name__ == '__main__':
-    # for during dev only
-    manager = LibraryManager()
-    manager.new_library("test", "test")
-    del manager  # see notes issue #2
+    # # for during dev only
+    # manager = LibraryManager()
+    # manager.new_library("test", "test")
+    # del manager  # see notes issue #2
     pass

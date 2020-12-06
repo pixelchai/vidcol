@@ -9,7 +9,7 @@ import string
 import qtawesome as qta
 from util import logger
 
-from library import LibraryManager, Library
+from library import LibraryManager, Library, PasswordRefusedException
 from ui import widgets
 
 ITEM_UI_KEYS = [
@@ -27,7 +27,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         self.library_manager = LibraryManager()
         self.library = self.library_manager.get_last_library()
-
 
         super().__init__(parent=None)
         self.setWindowTitle("VidCol")
@@ -102,11 +101,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.library.close()  # may be unnecessary since library_manager may handle for us
         self.library = self.library_manager.get_library(name)
 
+        switched_name = self.library_manager._cur_library.name
         for i, library_action in enumerate(self.library_actions):
-            library_action.setChecked(self.library_manager.names[i] == name)
+            library_action.setChecked(self.library_manager.names[i] == switched_name)
 
         self._load_header_options()
-        logger.debug("Library switched to: {}".format(name))
+        logger.debug("Library switched to: {}".format(switched_name))
 
         # if library requires password, enter it
         # todo: implement
@@ -254,6 +254,17 @@ class LibraryDetailWindow(CloseableWindow):
 
         # for tiling window managers, this ensures shown as modal (floating) window
         self.setFixedSize(self.sizeHint())
+
+# class PasswordDialog(QtWidgets.QDialog):
+#     def __init__(self, parent=None, *args, **kwargs):
+#         super().__init__(parent, *args, **kwargs)
+#         self.layout = QtWidgets.QVBoxLayout(self)
+#
+#         self.edit_pass = QtWidgets.QLineEdit()
+#         self.edit_pass.setEchoMode(QtWidgets.QLineEdit.Password)
+#         self.layout.addWidget(self.edit_pass)
+#
+#         self.setLayout(self.layout)
 
 if __name__ == '__main__':
     # # for debug only:
