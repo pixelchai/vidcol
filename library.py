@@ -3,10 +3,15 @@ import shutil
 
 import pyzipper
 import json
+import util
 from util import logger
+from qtpy import QtWidgets, QtGui, QtCore
 
 PATH_FILES = "files"
 PATH_LAST_FILE = os.path.join(PATH_FILES, "last.txt")
+
+class PasswordRefusedException(RuntimeError):
+    pass
 
 class LibraryManager:
     def __init__(self):
@@ -29,38 +34,46 @@ class LibraryManager:
 
         logger.info("{} libraries detected".format(len(self.names)))
 
-    def new_library(self, name) -> "Library":
+    def new_library(self, name, pwd=None) -> "Library":
         if name in self.names:
             raise KeyError
         else:
-            with Library(name) as library:
+            with Library(name, pwd) as library:
                 library.save()
             self.names.append(name)
-            return self.get_library(name)
+            return self.get_library(name, pwd)
 
-    def get_library(self, name) -> "Library":
-        if name not in self.names:
-            raise KeyError
-        else:
-            if self._cur_library is not None:
-                if self._cur_library.name == name:
-                    return self._cur_library
-                else:
-                    self._cur_library.close()  # dispose of old library if any
+    def get_library(self, name, pwd=None) -> "Library":
+        try:
+            if name not in self.names:
+                raise KeyError
+            else:
+                if self._cur_library is not None:
+                    if self._cur_library.name == name:
+                        return self._cur_library
+                    else:
+                        self._cur_library.close()  # dispose of old library if any
 
-            self._cur_library = Library(name)
+                self._cur_library = Library(name, pwd)
 
-            # write last library to filesystem
-            with open(PATH_LAST_FILE, "w") as f:
-                f.write(name)
-            return self._cur_library
+                # write last library to filesystem
+                with open(PATH_LAST_FILE, "w") as f:
+                    f.write(name)
+                return self._cur_library
+        except PasswordRefusedException:
+            util.warn("Password refused while trying to get library \"{}\" so "
+                      "switching to default library instead".format(name))
+            return self.get_default_library()
 
     def get_last_library(self) -> "Library":
         if os.path.isfile(PATH_LAST_FILE):
             with open(PATH_LAST_FILE, "r") as f:
                 return self.get_library(f.read())
         else:
-            return self.get_library("Default")  # in exceptional cases, error will be raised (such as when no libraries exist)
+            return self.get_default_library()
+
+    def get_default_library(self) -> "Library":
+        return self.get_library("Default")  # in exceptional cases, error will be raised (such as when no libraries exist)
 
     def close(self):
         if self._cur_library is not None:
@@ -72,7 +85,7 @@ class LibraryManager:
 class Library:
     def __init__(self, name, pwd=None):
         self.name = name
-        self.pwd = pwd
+        self._pwd = pwd
 
         self.path = os.path.join(PATH_FILES, self.name + ".zip")
         self.path_tmp = os.path.join(PATH_FILES, self.name + ".tmp.zip")
@@ -84,6 +97,9 @@ class Library:
         }
         self.meta = {}
 
+        if os.path.isfile(self.path):
+            self.prompt_password()
+
         self._fh = self.__open_fh()  # file handle. NB: remember to dispose correctly
         self._load()
 
@@ -92,9 +108,7 @@ class Library:
             path = self.path
 
         fh = pyzipper.AESZipFile(path, "a", compression=pyzipper.ZIP_DEFLATED)
-        if self.pwd is not None:
-            fh.setencryption(pyzipper.WZ_AES)
-            fh.setpassword(self.pwd)
+        self._apply_password(fh, self._pwd)
 
         return fh
 
@@ -107,16 +121,21 @@ class Library:
     def __del__(self):
         self.close()
 
-    # def set_password(self, pwd):
-    #     self._fh.setencryption(pyzipper.WZ_AES)
-    #     self._fh.setpassword(pwd)
+    def _apply_password(self, fh, pwd):
+        if pwd is not None:
+            fh.setencryption(pyzipper.WZ_AES)
+            fh.setpassword(str(pwd).encode("utf8"))
 
     def save(self, recreate_fh=True):
         """
         :param recreate_fh: Zipfiles must be closed during the saving process. Set to True to recreate (reopen) the file handle after saving
         """
-        if self._fh is not None:
-            self._fh.close()
+        try:
+            if self._fh is not None:
+                self._fh.close()
+        except AttributeError:
+            # happens when password refused and disposing Library object
+            return
 
         # create new tmp archive
         with self.__open_fh(self.path_tmp) as fh_tmp:
@@ -131,6 +150,42 @@ class Library:
             self._fh = self.__open_fh()
 
         logger.debug("Library \"{}\" saved".format(self.name))
+
+    def test_password(self, pwd):
+        fh = self.__open_fh(self.path)
+        try:
+            self._apply_password(fh, pwd)
+
+            with fh.open("config.json", "r") as f:
+                return True
+        except RuntimeError as e:
+            if any([x in str(e) for x in ("requires a password", "Bad password")]):
+                return False
+            else:
+                # other kind of error so re-raise
+                raise
+        finally:
+            fh.close()
+
+    def prompt_password(self):
+        attempt_no = 0
+        while True:
+            if self.test_password(self._pwd):
+                logger.debug("Password test for library \"{}\" succeeded".format(self.name))
+                return
+            else:
+                msg = "The provided password was incorrect. Please try again: "
+                if attempt_no <= 0:
+                    logger.debug("Password required for library \"{}\". Prompting user.".format(self.name))
+                    msg = "Library \"{}\" is encrypted. Please input password: ".format(self.name)
+
+                # noinspection PyArgumentList
+                text, ok = QtWidgets.QInputDialog.getText(None, "Password", msg, QtWidgets.QLineEdit.Password)
+                if ok:
+                    self._pwd = text
+                else:
+                    raise PasswordRefusedException("Password input: not ok")
+            attempt_no += 1
 
     def _load(self):
         if "config.json" in self._fh.namelist():
@@ -151,7 +206,8 @@ class Library:
             self._closed = True
 
 if __name__ == '__main__':
-    # for during dev only
+    # # for during dev only
     # manager = LibraryManager()
-    # manager.new_library("Bruh")
+    # manager.new_library("test", "test")
+    # del manager  # see notes issue #2
     pass

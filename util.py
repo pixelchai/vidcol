@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from datetime import datetime
+from qtpy import QtWidgets, QtGui, QtCore
 
 # set up logging
 
@@ -25,3 +26,10 @@ if len(logger.handlers) <= 0:
 
     logger.addHandler(fh)
     logger.addHandler(ch)
+
+warning_box = None
+def warn(msg):
+    global warning_box
+    logger.warning(msg)
+    warning_box = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Question, "Warning", msg)
+    warning_box.show()
